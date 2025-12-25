@@ -1,0 +1,31 @@
+---
+- name: Create Multi-Site External Fabric (DCI)
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Create DCI Multi-Site External Network Fabric
+      cisco.dcnm.dcnm_fabric:
+        state: merged
+        config:
+          - FABRIC_NAME: DCI
+            FABRIC_TYPE: ISN
+            BGP_AS: "65111"
+            DEPLOY: false
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: dci_fabric_result
+      
+    - name: Display result
+      debug:
+        msg: "DCI Multi-Site External Fabric - Changed: {{ dci_fabric_result.changed }}"

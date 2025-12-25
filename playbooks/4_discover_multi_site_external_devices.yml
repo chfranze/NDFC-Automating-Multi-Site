@@ -1,0 +1,73 @@
+---
+- name: Discover and Configure Multi-Site External Devices in DCI Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+    switch_username: admin
+    switch_password: Cisco123
+
+  tasks:
+    - name: Discover IPN switches in DCI fabric
+      cisco.dcnm.dcnm_inventory:
+        fabric: DCI
+        state: merged
+        config:
+          - seed_ip: 10.199.101.203
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: true
+            role: core_router
+            
+          - seed_ip: 10.199.101.204
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: true
+            role: core_router
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 1000
+        ansible_connect_timeout: 1000
+      register: ipn_discovery
+      
+    - name: Wait for discovery to complete
+      pause:
+        seconds: 30
+        prompt: "Waiting for switch discovery to complete..."
+        
+    - name: Deploy DCI fabric configuration
+      cisco.dcnm.dcnm_inventory:
+        fabric: DCI
+        state: merged
+        deploy: true
+        config: []
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 1000
+        ansible_connect_timeout: 1000
+      register: deploy_result
+      
+    - name: Display results
+      debug:
+        msg: 
+          - "IPN-1 and IPN-2 discovered and configured"
+          - "Role: Core Router"
+          - "Deploy status: {{ deploy_result.changed }}"

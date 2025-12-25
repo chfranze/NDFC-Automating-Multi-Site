@@ -1,0 +1,57 @@
+---
+- name: Create VXLAN EVPN Fabrics on NDFC via Ansible Collection
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+    
+    fabrics:
+      - name: Site1
+        bgp_as: "65001"
+        loopback0_range: "10.12.0.0/22"
+        loopback1_range: "10.13.0.0/22"
+        subnet_range: "10.14.0.0/22"
+        
+      - name: Site2
+        bgp_as: "65002"
+        loopback0_range: "10.22.0.0/22"
+        loopback1_range: "10.23.0.0/22"
+        subnet_range: "10.24.0.0/22"
+
+  tasks:
+    - name: Create VXLAN EVPN Fabrics
+      cisco.dcnm.dcnm_fabric:
+        state: merged
+        config:
+          - FABRIC_NAME: "{{ item.name }}"
+            FABRIC_TYPE: VXLAN_EVPN
+            BGP_AS: "{{ item.bgp_as }}"
+            DEPLOY: true
+            LOOPBACK0_IP_RANGE: "{{ item.loopback0_range }}"
+            LOOPBACK1_IP_RANGE: "{{ item.loopback1_range }}"
+            SUBNET_RANGE: "{{ item.subnet_range }}"
+            GRFIELD_DEBUG_FLAG: Enable
+            ANYCAST_GW_MAC: "2020.0000.00aa"
+            ENABLE_NETFLOW: false
+            ENABLE_NXAPI: true
+            ENABLE_PVLAN: false
+            FEATURE_PTP: false
+            UNDERLAY_IS_V6: false
+            REPLICATION_MODE: Multicast
+      loop: "{{ fabrics }}"
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: fabric_result
+      
+    - name: Display fabric creation results
+      debug:
+        msg: "Fabric {{ item.item.name }} - Changed: {{ item.changed }}"
+      loop: "{{ fabric_result.results }}"

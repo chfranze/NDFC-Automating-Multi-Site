@@ -1,0 +1,32 @@
+---
+- name: Create Multi-Site Domain (MSD) Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Create Multi-Site MSD Fabric
+      cisco.dcnm.dcnm_fabric:
+        state: merged
+        config:
+          - FABRIC_NAME: Multi-Site
+            FABRIC_TYPE: VXLAN_EVPN_MSD
+            BORDER_GWY_CONNECTIONS: Direct_To_BGWS
+            MS_UNDERLAY_AUTOCONFIG: true
+            DEPLOY: false
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: msd_fabric_result
+      
+    - name: Display result
+      debug:
+        msg: "Multi-Site MSD Fabric created - Changed: {{ msd_fabric_result.changed }}"

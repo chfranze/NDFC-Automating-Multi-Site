@@ -1,0 +1,121 @@
+---
+- name: Discover and Configure Switches in VXLAN EVPN Fabrics
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+    switch_username: admin
+    switch_password: Cisco123
+    
+    # Required timeout settings for dcnm_inventory
+    ansible_command_timeout: 1000
+    ansible_connect_timeout: 1000
+
+  tasks:
+    # Site1 Switches
+    - name: Discover Site1 switches
+      cisco.dcnm.dcnm_inventory:
+        fabric: Site1
+        state: merged
+        config:
+          - seed_ip: 10.199.101.101
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: false
+            role: border
+            
+          - seed_ip: 10.199.101.102
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: false
+            role: border
+            
+          - seed_ip: 10.199.101.201
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: false
+            role: border_gateway_spine
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 1000
+        ansible_connect_timeout: 1000
+      register: site1_discovery
+      
+    # Site2 Switches  
+    - name: Discover Site2 switches
+      cisco.dcnm.dcnm_inventory:
+        fabric: Site2
+        state: merged
+        config:
+          - seed_ip: 10.199.101.103
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: false
+            role: leaf
+            
+          - seed_ip: 10.199.101.104
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: false
+            role: leaf
+            
+          - seed_ip: 10.199.101.202
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+            max_hops: 0
+            preserve_config: false
+            role: border_gateway_spine
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 1000
+        ansible_connect_timeout: 1000
+      register: site2_discovery
+      
+    - name: Wait for discovery to complete
+      pause:
+        seconds: 30
+        
+    - name: Deploy fabric configurations
+      cisco.dcnm.dcnm_inventory:
+        fabric: "{{ item }}"
+        state: merged
+        deploy: true
+        config: []
+      loop:
+        - Site1
+        - Site2
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 1000
+        ansible_connect_timeout: 1000
