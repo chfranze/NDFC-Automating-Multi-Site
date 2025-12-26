@@ -1,0 +1,137 @@
+---
+- name: Create Overlay Networks in Multi-Site Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Create Networks in Multi-Site Fabric
+      cisco.dcnm.dcnm_network:
+        state: merged
+        fabric: Multi-Site
+        config:
+          - net_name: 10-1-0-0--16
+            vrf_name: VRF1
+            net_id: 30001
+            net_template: Default_Network_Universal
+            net_extension_template: Default_Network_Extension_Universal
+            vlan_id: 2300
+            gw_ip_subnet: 10.1.1.254/16
+            attach: []
+            deploy: true
+            
+          - net_name: 10-2-0-0--16
+            vrf_name: VRF1
+            net_id: 30002
+            net_template: Default_Network_Universal
+            net_extension_template: Default_Network_Extension_Universal
+            vlan_id: 2301
+            gw_ip_subnet: 10.2.1.254/16
+            attach: []
+            deploy: true
+            
+          - net_name: 10-3-0-0--16
+            vrf_name: VRF1
+            net_id: 30003
+            net_template: Default_Network_Universal
+            net_extension_template: Default_Network_Extension_Universal
+            vlan_id: 2302
+            gw_ip_subnet: 10.3.1.254/16
+            attach: []
+            deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: network_result
+      
+    - name: Display network creation results
+      debug:
+        msg: "Networks created - Changed: {{ network_result.changed }}"
+        
+    - name: Wait for network configuration
+      pause:
+        seconds: 10
+        
+    - name: Enable L3 Gateway on Border for Networks in Site1
+      cisco.dcnm.dcnm_network:
+        state: merged
+        fabric: Site1
+        config:
+          - net_name: 10-1-0-0--16
+            vrf_name: VRF1
+            net_id: 30001
+            vlan_id: 2300
+            gw_ip_subnet: 10.1.1.254/16
+            l3gw_on_border: true
+            
+          - net_name: 10-2-0-0--16
+            vrf_name: VRF1
+            net_id: 30002
+            vlan_id: 2301
+            gw_ip_subnet: 10.2.1.254/16
+            l3gw_on_border: true
+            
+          - net_name: 10-3-0-0--16
+            vrf_name: VRF1
+            net_id: 30003
+            vlan_id: 2302
+            gw_ip_subnet: 10.3.1.254/16
+            l3gw_on_border: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: site1_l3gw_result
+      
+    - name: Enable L3 Gateway on Border for Networks in Site2
+      cisco.dcnm.dcnm_network:
+        state: merged
+        fabric: Site2
+        config:
+          - net_name: 10-1-0-0--16
+            vrf_name: VRF1
+            net_id: 30001
+            vlan_id: 2300
+            gw_ip_subnet: 10.1.1.254/16
+            l3gw_on_border: true
+            
+          - net_name: 10-2-0-0--16
+            vrf_name: VRF1
+            net_id: 30002
+            vlan_id: 2301
+            gw_ip_subnet: 10.2.1.254/16
+            l3gw_on_border: true
+            
+          - net_name: 10-3-0-0--16
+            vrf_name: VRF1
+            net_id: 30003
+            vlan_id: 2302
+            gw_ip_subnet: 10.3.1.254/16
+            l3gw_on_border: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: site2_l3gw_result
+      
+    - name: Display L3 Gateway configuration results
+      debug:
+        msg: 
+          - "Site1 L3 Gateway enabled - Changed: {{ site1_l3gw_result.changed }}"
+          - "Site2 L3 Gateway enabled - Changed: {{ site2_l3gw_result.changed }}"

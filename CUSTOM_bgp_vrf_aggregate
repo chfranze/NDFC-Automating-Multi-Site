@@ -1,0 +1,22 @@
+##template variables
+
+@(DisplayName="BGP AS #", Description="BGP Autonomous System number")
+string BGP_AS;
+
+@(DisplayName="VRF Name", Description="Name of the VRF")
+string VRF_NAME;
+
+@(DisplayName="IP ggregate prefix to advertise", Description="IP prefix in CIDR format")
+ipV4AddressWithSubnet IP_PREFIX;
+
+#    Copyright (c) 2025 by Christoffer Franzén.
+#    All rights reserved.
+
+##
+##template content
+
+router bgp $$BGP_AS$$
+  vrf $$VRF_NAME$$
+    address-family ipv4 unicast
+      aggregate-address $$IP_PREFIX$$ summary-only
+##

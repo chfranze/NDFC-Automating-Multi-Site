@@ -1,0 +1,64 @@
+---
+- name: Add Child Fabrics to Multi-Site Domain and Deploy
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Add Site1, Site2, and DCI fabrics to Multi-Site Domain
+      cisco.dcnm.dcnm_fabric:
+        state: merged
+        config:
+          - FABRIC_NAME: Site1
+            FABRIC_TYPE: VXLAN_EVPN
+            FABRIC_PARENT: Multi-Site
+            
+          - FABRIC_NAME: Site2
+            FABRIC_TYPE: VXLAN_EVPN
+            FABRIC_PARENT: Multi-Site
+            
+          - FABRIC_NAME: DCI
+            FABRIC_TYPE: ISN
+            FABRIC_PARENT: Multi-Site
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: add_child_result
+      
+    - name: Display child fabric addition results
+      debug:
+        msg: "Child fabrics added - Changed: {{ add_child_result.changed }}"
+        
+    - name: Wait for fabric association
+      pause:
+        seconds: 15
+        
+    - name: Recalculate and Deploy Multi-Site configuration
+      cisco.dcnm.dcnm_inventory:
+        fabric: Multi-Site
+        state: merged
+        deploy: true
+        config: []
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 1000
+        ansible_connect_timeout: 1000
+      register: deploy_result
+      
+    - name: Display deployment result
+      debug:
+        msg: "Multi-Site deployment - Changed: {{ deploy_result.changed }}"

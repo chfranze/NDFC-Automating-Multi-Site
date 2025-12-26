@@ -1,0 +1,89 @@
+---
+- name: Create External VRF_LITE Links between Site1 and Internet Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Create VRF_LITE link from Leaf-101 to DC-Border
+      cisco.dcnm.dcnm_links:
+        state: merged
+        src_fabric: Site1
+        config:
+          - dst_fabric: Internet
+            src_interface: Ethernet1/3
+            dst_interface: GigabitEthernet1
+            src_device: Leaf-101
+            dst_device: DC-Border
+            template: ext_vrf_lite_link
+            profile:
+              ipv4_subnet: 169.254.101.0/30
+              neighbor_ip: 169.254.101.2
+              src_asn: 65001
+              dst_asn: 100
+              mtu: 1500
+              auto_deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: link1_result
+      until: link1_result is not failed or "Deploy is already in progress" not in (link1_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Display Leaf-101 link creation results
+      debug:
+        msg: "Leaf-101 to DC-Border link created - Changed: {{ link1_result.changed }}"
+        
+    - name: Wait before creating second link
+      pause:
+        seconds: 10
+        
+    - name: Create VRF_LITE link from Leaf-102 to DC-Border
+      cisco.dcnm.dcnm_links:
+        state: merged
+        src_fabric: Site1
+        config:
+          - dst_fabric: Internet
+            src_interface: Ethernet1/3
+            dst_interface: GigabitEthernet2
+            src_device: Leaf-102
+            dst_device: DC-Border
+            template: ext_vrf_lite_link
+            profile:
+              ipv4_subnet: 169.254.102.0/30
+              neighbor_ip: 169.254.102.2
+              src_asn: 65001
+              dst_asn: 100
+              mtu: 1500
+              auto_deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: link2_result
+      until: link2_result is not failed or "Deploy is already in progress" not in (link2_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Display Leaf-102 link creation results
+      debug:
+        msg: "Leaf-102 to DC-Border link created - Changed: {{ link2_result.changed }}"
+        
+    - name: Display all link creation results
+      debug:
+        msg: 
+          - "Link 1 (Leaf-101) - Changed: {{ link1_result.changed }}"
+          - "Link 2 (Leaf-102) - Changed: {{ link2_result.changed }}"

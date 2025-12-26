@@ -1,0 +1,33 @@
+##template variables
+#    Copyright (c) 2018 by Cisco Systems, Inc.
+#    All rights reserved.
+@(IsMandatory=false, IsAsn=true, Description="Local BGP Autonomous System Number", DisplayName="Local BGP AS #")
+string asn {
+   defaultValue=65529;
+};
+
+##
+##template content
+ip prefix-list default-route seq 5 permit 0.0.0.0/0 le 1
+ip prefix-list host-route seq 5 permit 0.0.0.0/0 eq 32 
+route-map EXTCON-RMAP-FILTER deny 10
+  match ip address prefix-list default-route
+route-map EXTCON-RMAP-FILTER permit 15
+  match ip address prefix-list host-route
+  match tag 111
+  set community 65005:111
+route-map EXTCON-RMAP-FILTER deny 20
+  match ip address prefix-list host-route
+route-map EXTCON-RMAP-FILTER permit 1000
+ipv6 prefix-list default-route-v6 seq 5 permit 0::/0
+ipv6 prefix-list host-route-v6 seq 5 permit 0::/0 eq 128
+route-map EXTCON-RMAP-FILTER-V6 deny 10
+  match ipv6 address prefix-list default-route-v6
+route-map EXTCON-RMAP-FILTER-V6 permit 15
+  match ipv6 address prefix-list host-route-v6
+  match tag 111
+  set community 65005:111
+route-map EXTCON-RMAP-FILTER-V6 deny 20
+  match ipv6 address prefix-list host-route-v6
+route-map EXTCON-RMAP-FILTER-V6 permit 1000
+##

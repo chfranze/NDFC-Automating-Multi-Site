@@ -1,0 +1,40 @@
+---
+- name: Create VRF in Multi-Site Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Create VRF1 in Multi-Site Fabric
+      cisco.dcnm.dcnm_vrf:
+        state: merged
+        fabric: Multi-Site
+        config:
+          - vrf_name: VRF1
+            vrf_id: 50001
+            vrf_template: Default_VRF_Universal
+            vrf_extension_template: Default_VRF_Extension_Universal
+            #vlan_id: 0  # 0 means propose VLAN automatically
+            vlan_name: VRF1-L3VNI
+            attach: []
+            deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: vrf_result
+      
+    - name: Display VRF creation results
+      debug:
+        msg: "VRF1 created - Changed: {{ vrf_result.changed }}"
+        
+    - name: Wait for VRF configuration
+      pause:
+        seconds: 10

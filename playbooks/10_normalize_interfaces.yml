@@ -1,0 +1,67 @@
+---
+- name: Normalize Interfaces in Site2 Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Normalize Ethernet1/1 on Leaf-103
+      cisco.dcnm.dcnm_interface:
+        state: merged
+        fabric: Site2
+        config:
+          - name: Ethernet1/1
+            type: eth
+            switch:
+              - Leaf-103
+            profile:
+              admin_state: true
+              mode: access
+              policy: int_access_host
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: leaf103_result
+      until: leaf103_result is not failed or "Deploy is already in progress" not in (leaf103_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Normalize Ethernet1/1 on Leaf-104
+      cisco.dcnm.dcnm_interface:
+        state: merged
+        fabric: Site2
+        config:
+          - name: Ethernet1/1
+            type: eth
+            switch:
+              - Leaf-104
+            profile:
+              admin_state: true
+              mode: access
+              policy: int_access_host
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: leaf104_result
+      until: leaf104_result is not failed or "Deploy is already in progress" not in (leaf104_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Display interface normalization results
+      debug:
+        msg: 
+          - "Leaf-103 Eth1/1 normalized - Changed: {{ leaf103_result.changed }}"
+          - "Leaf-104 Eth1/1 normalized - Changed: {{ leaf104_result.changed }}"

@@ -15,7 +15,8 @@
           - FABRIC_NAME: DCI
             FABRIC_TYPE: ISN
             BGP_AS: "65111"
-            DEPLOY: false
+            IS_READ_ONLY: false
+            DEPLOY: true
       vars:
         ansible_connection: httpapi
         ansible_network_os: cisco.dcnm.dcnm
@@ -24,6 +25,8 @@
         ansible_user: "{{ ndfc_username }}"
         ansible_password: "{{ ndfc_password }}"
         ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 300
+        ansible_connect_timeout: 300
       register: dci_fabric_result
       
     - name: Display result

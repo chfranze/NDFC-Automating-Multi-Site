@@ -1,0 +1,243 @@
+---
+- name: Attach Overlay Networks to Devices
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    # - name: Attach Network 10-1-0-0--16 (VLAN 2300) to Leaf-101/Leaf-102 vPC1
+    #   cisco.dcnm.dcnm_network:
+    #     state: merged
+    #     fabric: Site1
+    #     config:
+    #       - net_name: 10-1-0-0--16
+    #         vrf_name: VRF1
+    #         net_id: 30001
+    #         vlan_id: 2300
+    #         gw_ip_subnet: 10.1.1.254/16
+    #         attach:
+    #           - ip_address: 10.199.101.101
+    #             ports:
+    #               - vpc1
+    #           - ip_address: 10.199.101.102
+    #             ports:
+    #               - vpc1
+    #         deploy: true
+    #   vars:
+    #     ansible_connection: httpapi
+    #     ansible_network_os: cisco.dcnm.dcnm
+    #     ansible_httpapi_use_ssl: true
+    #     ansible_httpapi_validate_certs: false
+    #     ansible_user: "{{ ndfc_username }}"
+    #     ansible_password: "{{ ndfc_password }}"
+    #     ansible_host: "{{ ndfc_host }}"
+    #   register: vpc_attach_result
+    #   until: vpc_attach_result is not failed or "Deploy is already in progress" not in (vpc_attach_result.msg.DATA | default(''))
+    #   retries: 5
+    #   delay: 15
+      
+    - name: Attach Network 10-1-0-0--16 (VLAN 2300) to Leaf-103 Eth1/1
+      cisco.dcnm.dcnm_network:
+        state: merged
+        fabric: Site2
+        config:
+          - net_name: 10-1-0-0--16
+            vrf_name: VRF1
+            net_id: 30001
+            vlan_id: 2300
+            gw_ip_subnet: 10.1.1.254/16
+            attach:
+              - ip_address: 10.199.101.103
+                ports:
+                  - Ethernet1/1
+            deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: leaf103_attach_result
+      until: leaf103_attach_result is not failed or "Deploy is already in progress" not in (leaf103_attach_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Attach Network 10-2-0-0--16 (VLAN 2301) to Leaf-104 Eth1/1
+      cisco.dcnm.dcnm_network:
+        state: merged
+        fabric: Site2
+        config:
+          - net_name: 10-2-0-0--16
+            vrf_name: VRF1
+            net_id: 30002
+            vlan_id: 2301
+            gw_ip_subnet: 10.2.1.254/16
+            attach:
+              - ip_address: 10.199.101.104
+                ports:
+                  - Ethernet1/1
+            deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: leaf104_attach_result
+      until: leaf104_attach_result is not failed or "Deploy is already in progress" not in (leaf104_attach_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Attach Networks to Spine-201 (VLANs 2300, 2301)
+      cisco.dcnm.dcnm_network:
+        state: merged
+        fabric: DCI
+        config:
+          - net_name: 10-1-0-0--16
+            vrf_name: VRF1
+            net_id: 30001
+            vlan_id: 2300
+            gw_ip_subnet: 10.1.1.254/16
+            attach:
+              - ip_address: 10.199.101.201
+            deploy: true
+          - net_name: 10-2-0-0--16
+            vrf_name: VRF1
+            net_id: 30002
+            vlan_id: 2301
+            gw_ip_subnet: 10.2.1.254/16
+            attach:
+              - ip_address: 10.199.101.201
+            deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: spine201_attach_result
+      until: spine201_attach_result is not failed or "Deploy is already in progress" not in (spine201_attach_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Attach Networks to Spine-202 (VLANs 2300, 2301)
+      cisco.dcnm.dcnm_network:
+        state: merged
+        fabric: DCI
+        config:
+          - net_name: 10-1-0-0--16
+            vrf_name: VRF1
+            net_id: 30001
+            vlan_id: 2300
+            gw_ip_subnet: 10.1.1.254/16
+            attach:
+              - ip_address: 10.199.101.202
+            deploy: true
+          - net_name: 10-2-0-0--16
+            vrf_name: VRF1
+            net_id: 30002
+            vlan_id: 2301
+            gw_ip_subnet: 10.2.1.254/16
+            attach:
+              - ip_address: 10.199.101.202
+            deploy: true
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: spine202_attach_result
+      until: spine202_attach_result is not failed or "Deploy is already in progress" not in (spine202_attach_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Display network attachment results
+      debug:
+        msg: 
+          - "vPC attachment - Changed: {{ vpc_attach_result.changed }}"
+          - "Leaf-103 attachment - Changed: {{ leaf103_attach_result.changed }}"
+          - "Leaf-104 attachment - Changed: {{ leaf104_attach_result.changed }}"
+          - "Spine-201 attachment - Changed: {{ spine201_attach_result.changed }}"
+          - "Spine-202 attachment - Changed: {{ spine202_attach_result.changed }}"
+          
+    - name: Wait before final deployments
+      pause:
+        seconds: 20
+        
+    - name: Deploy Site1 configuration
+      cisco.dcnm.dcnm_rest:
+        method: POST
+        path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/Site1/config-deploy
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: site1_deploy
+      until: site1_deploy is not failed or "Deploy is already in progress" not in (site1_deploy.response | default('') | string)
+      retries: 5
+      delay: 15
+      
+    - name: Wait for Site1 deployment
+      pause:
+        seconds: 30
+        
+    - name: Deploy Site2 configuration
+      cisco.dcnm.dcnm_rest:
+        method: POST
+        path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/Site2/config-deploy
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: site2_deploy
+      until: site2_deploy is not failed or "Deploy is already in progress" not in (site2_deploy.response | default('') | string)
+      retries: 5
+      delay: 15
+      
+    - name: Wait for Site2 deployment
+      pause:
+        seconds: 30
+        
+    - name: Deploy Multi-Site configuration
+      cisco.dcnm.dcnm_rest:
+        method: POST
+        path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/Multi-Site/config-deploy
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: msd_deploy
+      until: msd_deploy is not failed or "Deploy is already in progress" not in (msd_deploy.response | default('') | string)
+      retries: 5
+      delay: 15
+      
+    - name: Display final deployment results
+      debug:
+        msg: 
+          - "Site1 deployed - Changed: {{ site1_deploy.changed }}"
+          - "Site2 deployed - Changed: {{ site2_deploy.changed }}"
+          - "Multi-Site deployed - Changed: {{ msd_deploy.changed }}"

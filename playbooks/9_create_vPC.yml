@@ -1,0 +1,78 @@
+---
+- name: Create vPC Pair and vPC Interface in Site1 Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Create vPC pair between Leaf-101 and Leaf-102
+      cisco.dcnm.dcnm_vpc_pair:
+        src_fabric: Site1
+        deploy: true
+        state: merged
+        config:
+          - peerOneId: Leaf-101
+            peerTwoId: Leaf-102
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 300
+        ansible_connect_timeout: 300
+      register: vpc_pair_result
+      until: vpc_pair_result is not failed or "Deploy is already in progress" not in (vpc_pair_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Display vPC pair creation results
+      debug:
+        msg: "vPC pair created - Changed: {{ vpc_pair_result.changed }}"
+        
+    - name: Wait for vPC pair configuration
+      pause:
+        seconds: 15
+        
+    - name: Create vPC1 interface on Leaf-101 and Leaf-102
+      cisco.dcnm.dcnm_interface:
+        state: merged
+        fabric: Site1
+        config:
+          - name: vpc1
+            type: vpc
+            switch:
+              - Leaf-101
+              - Leaf-102
+            profile:
+              admin_state: true
+              mode: access
+              peer1_pcid: 1
+              peer2_pcid: 1
+              peer1_members:
+                - Ethernet1/1
+              peer2_members:
+                - Ethernet1/1
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+        ansible_command_timeout: 300
+        ansible_connect_timeout: 300
+      register: vpc_result
+      until: vpc_result is not failed or "Deploy is already in progress" not in (vpc_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Display vPC interface creation results
+      debug:
+        msg: "vPC1 interface created - Changed: {{ vpc_result.changed }}"
