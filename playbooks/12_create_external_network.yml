@@ -7,15 +7,17 @@
     ndfc_username: admin
     ndfc_password: Cisco123
 
-  tasks:
+  tasks:    
     - name: Create Internet External Connectivity Network Fabric
-      cisco.dcnm.dcnm_fabric:
-        state: merged
-        config:
-          - FABRIC_NAME: Internet
-            FABRIC_TYPE: External
-            BGP_AS: 100
-            FABRIC_MONITOR_MODE: false
+      cisco.dcnm.dcnm_rest:
+        method: POST
+        path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/Internet/External_Fabric
+        json_data: |
+          {
+            "FABRIC_NAME": "Internet",
+            "FABRIC_TYPE": "External_Fabric",
+            "BGP_AS": "100"
+          }
       vars:
         ansible_connection: httpapi
         ansible_network_os: cisco.dcnm.dcnm
@@ -25,25 +27,20 @@
         ansible_password: "{{ ndfc_password }}"
         ansible_host: "{{ ndfc_host }}"
       register: internet_fabric_result
-      until: internet_fabric_result is not failed or "Deploy is already in progress" not in (internet_fabric_result.msg.DATA | default(''))
-      retries: 5
-      delay: 15
+      failed_when: false
       
     - name: Display Internet fabric creation results
       debug:
-        msg: "Internet fabric created - Changed: {{ internet_fabric_result.changed }}"
+        var: internet_fabric_result
         
     - name: Wait for fabric creation
       pause:
         seconds: 10
         
-    - name: Add Internet fabric to Multi-Site Domain
-      cisco.dcnm.dcnm_fabric:
-        state: merged
-        config:
-          - FABRIC_NAME: Internet
-            FABRIC_TYPE: External
-            FABRIC_PARENT: Multi-Site
+    - name: Get Internet fabric details to verify creation
+      cisco.dcnm.dcnm_rest:
+        method: GET
+        path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/Internet
       vars:
         ansible_connection: httpapi
         ansible_network_os: cisco.dcnm.dcnm
@@ -52,18 +49,42 @@
         ansible_user: "{{ ndfc_username }}"
         ansible_password: "{{ ndfc_password }}"
         ansible_host: "{{ ndfc_host }}"
-      register: internet_parent_result
-      until: internet_parent_result is not failed or "Deploy is already in progress" not in (internet_parent_result.msg.DATA | default(''))
-      retries: 5
-      delay: 15
+      register: fabric_check
+      failed_when: false
       
-    - name: Display Internet fabric parent association results
+    - name: Display fabric check results
       debug:
-        msg: "Internet fabric added to Multi-Site - Changed: {{ internet_parent_result.changed }}"
+        var: fabric_check
         
-    - name: Wait for fabric association
-      pause:
-        seconds: 15
+    # - name: Add Internet fabric to Multi-Site Domain
+    #   cisco.dcnm.dcnm_rest:
+    #     method: PUT
+    #     path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/Internet
+    #     json_data: |
+    #       {
+    #         "FABRIC_NAME": "Internet",
+    #         "FABRIC_TYPE": "External",
+    #         "BGP_AS": "100",
+    #         "MSD_FABRIC": "Multi-Site"
+    #       }
+    #   vars:
+    #     ansible_connection: httpapi
+    #     ansible_network_os: cisco.dcnm.dcnm
+    #     ansible_httpapi_use_ssl: true
+    #     ansible_httpapi_validate_certs: false
+    #     ansible_user: "{{ ndfc_username }}"
+    #     ansible_password: "{{ ndfc_password }}"
+    #     ansible_host: "{{ ndfc_host }}"
+    #   register: internet_parent_result
+    #   failed_when: false
+      
+    # - name: Display Internet fabric parent association results
+    #   debug:
+    #     var: internet_parent_result
+        
+    # - name: Wait for fabric association
+    #   pause:
+    #     seconds: 15
         
     - name: Discover and add DC-Border router to Internet fabric
       cisco.dcnm.dcnm_inventory:

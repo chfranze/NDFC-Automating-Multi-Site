@@ -1,5 +1,5 @@
 ---
-- name: Create External VRF_LITE Links between Site1 and Internet Fabric
+- name: Task 13 - Create External VRF_LITE Links between Site1 and Internet Fabric
   hosts: localhost
   gather_facts: no
   vars:
@@ -16,16 +16,19 @@
           - dst_fabric: Internet
             src_interface: Ethernet1/3
             dst_interface: GigabitEthernet1
-            src_device: Leaf-101
-            dst_device: DC-Border
-            template: ext_vrf_lite_link
+            src_device: 10.199.101.101  # Leaf-101 IP address
+            dst_device: 10.199.101.200  # DC-Border IP address
+            template: ext_fabric_setup
             profile:
-              ipv4_subnet: 169.254.101.0/30
-              neighbor_ip: 169.254.101.2
-              src_asn: 65001
-              dst_asn: 100
+              ipv4_subnet: 169.254.101.1/30      # Source IP with mask
+              neighbor_ip: 169.254.101.2         # Destination IP
+              src_asn: 65001                     # Source BGP ASN
+              dst_asn: 100                       # Destination BGP ASN
               mtu: 1500
-              auto_deploy: true
+              auto_deploy: true                  # Auto-generate neighbor config
+              vrf_lite_jython_template: "Ext_VRF_Lite_Jython_IOS_XE"  # IOS XE compatible template
+              peer1_description: "Link to DC-Border from Leaf-101"
+              peer2_description: "Link to Leaf-101 from DC-Border"
       vars:
         ansible_connection: httpapi
         ansible_network_os: cisco.dcnm.dcnm
@@ -41,49 +44,58 @@
       
     - name: Display Leaf-101 link creation results
       debug:
-        msg: "Leaf-101 to DC-Border link created - Changed: {{ link1_result.changed }}"
+        msg: "Leaf-101 (169.254.101.1) to DC-Border (169.254.101.2) link created - Changed: {{ link1_result.changed }}"
         
     - name: Wait before creating second link
       pause:
         seconds: 10
         
-    - name: Create VRF_LITE link from Leaf-102 to DC-Border
-      cisco.dcnm.dcnm_links:
-        state: merged
-        src_fabric: Site1
-        config:
-          - dst_fabric: Internet
-            src_interface: Ethernet1/3
-            dst_interface: GigabitEthernet2
-            src_device: Leaf-102
-            dst_device: DC-Border
-            template: ext_vrf_lite_link
-            profile:
-              ipv4_subnet: 169.254.102.0/30
-              neighbor_ip: 169.254.102.2
-              src_asn: 65001
-              dst_asn: 100
-              mtu: 1500
-              auto_deploy: true
-      vars:
-        ansible_connection: httpapi
-        ansible_network_os: cisco.dcnm.dcnm
-        ansible_httpapi_use_ssl: true
-        ansible_httpapi_validate_certs: false
-        ansible_user: "{{ ndfc_username }}"
-        ansible_password: "{{ ndfc_password }}"
-        ansible_host: "{{ ndfc_host }}"
-      register: link2_result
-      until: link2_result is not failed or "Deploy is already in progress" not in (link2_result.msg.DATA | default(''))
-      retries: 5
-      delay: 15
+    # - name: Create VRF_LITE link from Leaf-102 to DC-Border
+    #   cisco.dcnm.dcnm_links:
+    #     state: merged
+    #     src_fabric: Site1
+    #     config:
+    #       - dst_fabric: Internet
+    #         src_interface: Ethernet1/3
+    #         dst_interface: GigabitEthernet2
+    #         src_device: 10.199.101.102  # Leaf-102 IP address
+    #         dst_device: 10.199.101.200  # DC-Border IP address
+    #         template: ext_fabric_setup
+    #         profile:
+    #           ipv4_subnet: 169.254.102.1/30      # Source IP with mask
+    #           neighbor_ip: 169.254.102.2         # Destination IP
+    #           src_asn: 65001                     # Source BGP ASN
+    #           dst_asn: 100                       # Destination BGP ASN
+    #           mtu: 1500
+    #           auto_deploy: true                  # Auto-generate neighbor config
+    #           peer1_description: "Link to DC-Border from Leaf-102"
+    #           peer2_description: "Link to Leaf-102 from DC-Border"
+    #   vars:
+    #     ansible_connection: httpapi
+    #     ansible_network_os: cisco.dcnm.dcnm
+    #     ansible_httpapi_use_ssl: true
+    #     ansible_httpapi_validate_certs: false
+    #     ansible_user: "{{ ndfc_username }}"
+    #     ansible_password: "{{ ndfc_password }}"
+    #     ansible_host: "{{ ndfc_host }}"
+    #   register: link2_result
+    #   until: link2_result is not failed or "Deploy is already in progress" not in (link2_result.msg.DATA | default(''))
+    #   retries: 5
+    #   delay: 15
       
-    - name: Display Leaf-102 link creation results
-      debug:
-        msg: "Leaf-102 to DC-Border link created - Changed: {{ link2_result.changed }}"
+    # - name: Display Leaf-102 link creation results
+    #   debug:
+    #     msg: "Leaf-102 (169.254.102.1) to DC-Border (169.254.102.2) link created - Changed: {{ link2_result.changed }}"
         
     - name: Display all link creation results
       debug:
         msg: 
-          - "Link 1 (Leaf-101) - Changed: {{ link1_result.changed }}"
-          - "Link 2 (Leaf-102) - Changed: {{ link2_result.changed }}"
+          - "=== VRF_LITE Links Creation Summary ==="
+          - "Link 1: Leaf-101 (Eth1/3) <-> DC-Border (Gi1) - Changed: {{ link1_result.changed }}"
+          - "  - IP: 169.254.101.1/30 <-> 169.254.101.2"
+          - "  - BGP ASN: 65001 <-> 100"
+          - "  - MTU: 1500"
+          - "Link 2: Leaf-102 (Eth1/3) <-> DC-Border (Gi2) - Changed: {{ link2_result.changed }}"
+          - "  - IP: 169.254.102.1/30 <-> 169.254.102.2"
+          - "  - BGP ASN: 65001 <-> 100"
+          - "  - MTU: 1500"

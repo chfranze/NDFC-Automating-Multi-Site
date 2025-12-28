@@ -1,0 +1,58 @@
+---
+- name: Task 14 - Extend VRF1 Externally with VRF_LITE
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+    fabric_name: Site1
+    vrf_name: VRF1
+
+  tasks:
+    - name: Extend VRF1 with VRF_LITE on Leaf-101 and Leaf-102
+      cisco.dcnm.dcnm_vrf:
+        fabric: "{{ fabric_name }}"
+        state: merged
+        config:
+          - vrf_name: "{{ vrf_name }}"
+            attach:
+              - ip_address: 10.199.101.101  # Leaf-101
+                vrf_lite:
+                  - interface: Ethernet1/1  # Adjust interface to match your DC-Border connection
+                    ipv4_addr: 10.100.1.2/30  # Adjust IP addressing as needed
+                    neighbor_ipv4: 10.100.1.1
+                    dot1q: 100  # VLAN tag - adjust as needed
+                    
+              - ip_address: 10.199.101.102  # Leaf-102
+                vrf_lite:
+                  - interface: Ethernet1/1  # Adjust interface to match your DC-Border connection
+                    ipv4_addr: 10.100.2.2/30  # Adjust IP addressing as needed
+                    neighbor_ipv4: 10.100.2.1
+                    dot1q: 101  # VLAN tag - adjust as needed
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: vrf_lite_result
+      until: vrf_lite_result is not failed or "Deploy is already in progress" not in (vrf_lite_result.msg.DATA | default(''))
+      retries: 5
+      delay: 15
+      
+    - name: Display VRF_LITE extension results
+      debug:
+        msg: 
+          - "VRF_LITE extension completed - Changed: {{ vrf_lite_result.changed }}"
+          - "VRF1 extended on Leaf-101 (10.199.101.101) and Leaf-102 (10.199.101.102)"
+          
+    - name: Verification instructions
+      debug:
+        msg:
+          - "Verify the following:"
+          - "1. Both Leaf-101 & Leaf-102 have new Ethernet sub-interfaces to DC-Border"
+          - "2. Check VLAN numbers and IP subnets on both switches"
+          - "3. Confirm routing is established between VRF1 and DC-Border"

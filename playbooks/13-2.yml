@@ -1,0 +1,113 @@
+---
+- name: Task 13 - Create External VRF_LITE Links between Site1 and Internet Fabric
+  hosts: localhost
+  gather_facts: no
+  vars:
+    ndfc_host: 10.199.101.100
+    ndfc_username: admin
+    ndfc_password: Cisco123
+
+  tasks:
+    - name: Create VRF_LITE link from Leaf-101 to DC-Border
+      cisco.dcnm.dcnm_rest:
+        method: POST
+        path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/links
+        json_data: |
+          {
+            "sourceDevice": "9QIOK88JCDJ",
+            "destinationDevice": "9CRBJ3EUDBV",
+            "sourceSwitchName": "Leaf-101",
+            "destinationSwitchName": "DC-Border",
+            "sourceInterface": "Ethernet1/3",
+            "destinationInterface": "GigabitEthernet1",
+            "sourceFabric": "Site1",
+            "destinationFabric": "Internet",
+            "templateName": "ext_fabric_setup",
+            "nvPairs": {
+              "IP_MASK": "169.254.101.1/30",
+              "NEIGHBOR_IP": "169.254.101.2",
+              "asn": "65001",
+              "NEIGHBOR_ASN": "100",
+              "MTU": "1500",
+              "AUTO_VRF_LITE_FLAG": "true",
+              "PEER1_DESC": "Link to DC-Border from Leaf-101",
+              "PEER2_DESC": "Link to Leaf-101 from DC-Border",
+              "VRF_LITE_JYTHON_TEMPLATE": "Service_VRF_Lite_Jython"
+            }
+          }
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: link1_result
+      failed_when: false
+      
+    - name: Display Leaf-101 link creation results
+      debug:
+        var: link1_result
+        
+    - name: Wait before creating second link
+      pause:
+        seconds: 10
+      when: link1_result.msg.RETURN_CODE is defined and link1_result.msg.RETURN_CODE in [200, 201]
+        
+    - name: Create VRF_LITE link from Leaf-102 to DC-Border
+      cisco.dcnm.dcnm_rest:
+        method: POST
+        path: /appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/links
+        json_data: |
+          {
+            "sourceDevice": "9NGR9GQZUPX",
+            "destinationDevice": "9CRBJ3EUDBV",
+            "sourceSwitchName": "Leaf-102",
+            "destinationSwitchName": "DC-Border",
+            "sourceInterface": "Ethernet1/3",
+            "destinationInterface": "GigabitEthernet2",
+            "sourceFabric": "Site1",
+            "destinationFabric": "Internet",
+            "templateName": "ext_fabric_setup",
+            "nvPairs": {
+              "IP_MASK": "169.254.102.1/30",
+              "NEIGHBOR_IP": "169.254.102.2",
+              "asn": "65001",
+              "NEIGHBOR_ASN": "100",
+              "MTU": "1500",
+              "AUTO_VRF_LITE_FLAG": "true",
+              "PEER1_DESC": "Link to DC-Border from Leaf-102",
+              "PEER2_DESC": "Link to Leaf-102 from DC-Border",
+              "VRF_LITE_JYTHON_TEMPLATE": "Service_VRF_Lite_Jython"
+            }
+          }
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      register: link2_result
+      when: link1_result.msg.RETURN_CODE is defined and link1_result.msg.RETURN_CODE in [200, 201]
+      failed_when: false
+      
+    - name: Display Leaf-102 link creation results
+      debug:
+        var: link2_result
+      when: link2_result is defined
+        
+    - name: Display all link creation results
+      debug:
+        msg: 
+          - "=== VRF_LITE Links Creation Summary ==="
+          - "Link 1: Leaf-101 (Eth1/3) <-> DC-Border (Gi1)"
+          - "  - Status: {{ 'Success' if (link1_result.msg.RETURN_CODE | default(500) in [200, 201]) else 'Failed - ' + (link1_result.msg.DATA | default('Unknown error')) }}"
+          - "  - IP: 169.254.101.1/30 <-> 169.254.101.2"
+          - "  - BGP ASN: 65001 <-> 100"
+          - "Link 2: Leaf-102 (Eth1/3) <-> DC-Border (Gi2)"
+          - "  - Status: {{ 'Success' if (link2_result.msg.RETURN_CODE | default(500) in [200, 201]) else 'Failed or Skipped' }}"
+          - "  - IP: 169.254.102.1/30 <-> 169.254.102.2"
+          - "  - BGP ASN: 65001 <-> 100"
