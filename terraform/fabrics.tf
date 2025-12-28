@@ -19,14 +19,17 @@ resource "ndfc_fabric_vxlan_evpn" "Site1" {
     auto_symmetric_vrf_lite                     = false
     auto_unique_vrf_lite_ip_prefix              = false
     auto_vrflite_ifc_default_vrf                = false
-    bfd_auth_enable                             = false
-    bfd_enable                                  = false
-    bfd_ibgp_enable                             = false
+    bfd_auth_enable                             = true
+    bfd_auth_key                                = "a7k2m9p5w1x8c3v6b4n7j0r2t8q3y5f"
+    bfd_auth_key_id                             = 1
+    bfd_enable                                  = true
+    bfd_ibgp_enable                             = true
     bfd_isis_enable                             = false
-    bfd_ospf_enable                             = false
-    bfd_pim_enable                              = false
+    bfd_ospf_enable                             = true
+    bfd_pim_enable                              = true
     bgp_as                                      = "65001"
-    bgp_auth_enable                             = false
+    bgp_auth_enable                             = true
+    bgp_auth_key                                = "d3f8k9p2m5q7x1c4v6b8n0j3r5t2w4y6"
     bgp_auth_key_type                           = 3
     bgp_lb_id                                   = 0
     bootstrap_enable                            = false
@@ -100,12 +103,15 @@ resource "ndfc_fabric_vxlan_evpn" "Site1" {
     nxc_proxy_port                              = 8080
     object_tracking_number_range                = "100-299"
     ospf_area_id                                = "0.0.0.0"
-    ospf_auth_enable                            = false
+    ospf_auth_enable                            = true
+    ospf_auth_key                               = "e5h1l3m6n9p2r4t7w0x2c5v8b1j4k6"
+    ospf_auth_key_id                            = 1
     overlay_mode                                = "cli"
     overwrite_global_nxc                        = false
     per_vrf_loopback_auto_provision             = false
     per_vrf_loopback_auto_provision_v6          = false
-    pim_hello_auth_enable                       = false
+    pim_hello_auth_enable                       = true
+    pim_hello_auth_key                          = "d1f3m6p9r2t5w8x0c3v6b9j1n4k7l9"
     pm_enable                                   = false
     power_redundancy_mode                       = "ps-redundant"
     replication_mode                            = "Multicast"
@@ -160,14 +166,17 @@ resource "ndfc_fabric_vxlan_evpn" "Site2" {
     auto_symmetric_vrf_lite                     = false
     auto_unique_vrf_lite_ip_prefix              = false
     auto_vrflite_ifc_default_vrf                = false
-    bfd_auth_enable                             = false
-    bfd_enable                                  = false
-    bfd_ibgp_enable                             = false
+    bfd_auth_enable                             = true
+    bfd_auth_key                                = "p9w2x5c8v1b4n7j0r3t6y8q1f2h5k9"
+    bfd_auth_key_id                             = 1
+    bfd_enable                                  = true
+    bfd_ibgp_enable                             = true
     bfd_isis_enable                             = false
-    bfd_ospf_enable                             = false
-    bfd_pim_enable                              = false
+    bfd_ospf_enable                             = true
+    bfd_pim_enable                              = true
     bgp_as                                      = "65002"
-    bgp_auth_enable                             = false
+    bgp_auth_enable                             = true
+    bgp_auth_key                                = "m2n8p5q1r7t3w6x9c2v5b8j0k4l2f7"
     bgp_auth_key_type                           = 3
     bgp_lb_id                                   = 0
     bootstrap_enable                            = false
@@ -241,12 +250,15 @@ resource "ndfc_fabric_vxlan_evpn" "Site2" {
     nxc_proxy_port                              = 8080
     object_tracking_number_range                = "100-299"
     ospf_area_id                                = "0.0.0.0"
-    ospf_auth_enable                            = false
+    ospf_auth_enable                            = true
+    ospf_auth_key                               = "t4r7w1x9c2v5b8j1k4n7p0q3s6t2w5"
+    ospf_auth_key_id                            = 1
     overlay_mode                                = "cli"
     overwrite_global_nxc                        = false
     per_vrf_loopback_auto_provision             = false
     per_vrf_loopback_auto_provision_v6          = false
-    pim_hello_auth_enable                       = false
+    pim_hello_auth_enable                       = true
+    pim_hello_auth_key                          = "b7k1n4q8r2t5w9x3c6v0j2m5p8s1y4"
     pm_enable                                   = false
     power_redundancy_mode                       = "ps-redundant"
     replication_mode                            = "Multicast"
@@ -329,4 +341,9 @@ resource "ndfc_fabric_vxlan_msd" "Multi-Site" {
   network_extension_template = "Default_Network_Extension_Universal"
   vrf_extension_template     = "Default_VRF_Extension_Universal"
   deploy                     = false
+  depends_on = [
+    ndfc_fabric_vxlan_evpn.Site1,
+    ndfc_fabric_vxlan_evpn.Site2,
+    ndfc_fabric_msite_ext_net.DCI
+  ]
 }

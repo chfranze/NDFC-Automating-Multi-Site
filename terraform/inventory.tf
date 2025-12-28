@@ -71,9 +71,7 @@ resource "ndfc_inventory_devices" "Site2_devices" {
 # ============================================================================
 # DCI Fabric Inventory
 # ============================================================================
-# NOTE: DCI fabric devices are currently commented out due to discovery issues
-# Uncomment and apply once devices are properly accessible
-/*
+
 resource "ndfc_inventory_devices" "DCI_devices" {
   fabric_name                               = "DCI"
   auth_protocol                             = "md5"
@@ -99,4 +97,3 @@ resource "ndfc_inventory_devices" "DCI_devices" {
     }
   }
 }
-*/

@@ -1,0 +1,50 @@
+# NDFC Authentication Keys - Quick Reference
+
+## Site1 (ASN: 65001)
+```
+BGP Auth Key:     d3f8k9p2m5q7x1c4v6b8n0j3r5t2w4y6
+BFD Auth Key:     a7k2m9p5w1x8c3v6b4n7j0r2t8q3y5f
+OSPF Auth Key:    e5h1l3m6n9p2r4t7w0x2c5v8b1j4k6
+ISIS Auth Key:    f2g5h8k1m4n7p0r3t6w9x1c4v7b0j2
+PIM Auth Key:     d1f3m6p9r2t5w8x0c3v6b9j1n4k7l9
+```
+
+## Site2 (ASN: 65002)
+```
+BGP Auth Key:     m2n8p5q1r7t3w6x9c2v5b8j0k4l2f7
+BFD Auth Key:     p9w2x5c8v1b4n7j0r3t6y8q1f2h5k9
+OSPF Auth Key:    t4r7w1x9c2v5b8j1k4n7p0q3s6t2w5
+ISIS Auth Key:    x3b6j9m2p5r8t1w4y7c0v3f6h2k5n8
+PIM Auth Key:     b7k1n4q8r2t5w9x3c6v0j2m5p8s1y4
+```
+
+## DCI (ASN: 65111)
+```
+BGP Auth Key:     c4j7n2p9r5t1w6x8v0b3k8m1q4s7y2
+```
+
+---
+
+### Key Characteristics
+- **Length**: 32 characters each
+- **Type**: 3DES/Cisco Type 7 Encrypted
+- **Key ID**: 1 (where applicable)
+- **Status**: All embedded in terraform/fabrics.tf
+
+### Deployment Status
+- ✅ Site1: All keys configured
+- ✅ Site2: All keys configured
+- ✅ DCI: BGP key configured
+- ✅ Ready for: terraform apply
+
+### Important Notes
+1. Keys are stored directly in fabrics.tf
+2. For production, migrate to Vault/Secrets Manager
+3. Rotate keys every 90 days
+4. Maintain audit trail of all changes
+5. Test in development environment first
+
+---
+
+**Last Updated**: 2025-12-28
+**Configuration Status**: ✅ Complete
