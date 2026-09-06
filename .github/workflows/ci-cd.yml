@@ -1,0 +1,118 @@
+name: NDFC IaC CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'group_vars/**'
+      - 'inventory/**'
+      - 'playbooks/**'
+      - 'terraform/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'group_vars/**'
+      - 'inventory/**'
+      - 'playbooks/**'
+      - 'terraform/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: '3.11'
+  ANSIBLE_COLLECTIONS_VERSION: '>=3.0.0'
+
+jobs:
+  lint:
+    name: Lint & Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install collections
+        run: |
+          pip install ansible-core
+          ansible-galaxy collection install --requirements-file requirements.yml
+      - name: Syntax check all playbooks
+        run: |
+          for f in playbooks/*.yml; do
+            echo "=== Checking $f ==="
+            ansible-playbook --syntax-check -i inventory/hosts.yml "$f"
+          done
+      - name: Lint with ansible-lint (optional)
+        run: |
+          if command -v ansible-lint >/dev/null 2>&1; then
+            for f in playbooks/*.yml; do
+              echo "=== Linting $f ==="
+              ansible-lint "$f" || true
+            done
+          else
+            echo "ansible-lint not installed; skipping lint"
+          fi
+        continue-on-error: true
+
+  plan-networks:
+    name: Plan Network Changes (manual)
+    needs: lint
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: ndfc-plan
+      url: ${{ github.event.repository.url }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install ansible-core
+          ansible-galaxy collection install --requirements-file requirements.yml
+      - name: Run network plan (check mode)
+        run: |
+          ansible-playbook -i inventory/hosts.yml \
+            --check --diff \
+            playbooks/15_create_networks.yml
+        env:
+          NDFC_USERNAME: ${{ secrets.NDFC_USERNAME }}
+          NDFC_PASSWORD: ${{ secrets.NDFC_PASSWORD }}
+          ANSIBLE_HOST_KEY_CHECKING: "false"
+
+  apply-networks:
+    name: Apply Network Changes
+    needs: [lint, plan-networks]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: ndfc-production
+      url: ${{ github.event.repository.url }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install ansible-core
+          ansible-galaxy collection install --requirements-file requirements.yml
+      - name: Apply network playbook
+        run: |
+          ansible-playbook -i inventory/hosts.yml \
+            --diff \
+            playbooks/15_create_networks.yml
+        env:
+          NDFC_USERNAME: ${{ secrets.NDFC_USERNAME }}
+          NDFC_PASSWORD: ${{ secrets.NDFC_PASSWORD }}
+          ANSIBLE_HOST_KEY_CHECKING: "false"

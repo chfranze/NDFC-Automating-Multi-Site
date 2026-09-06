@@ -17,3 +17,29 @@ fabrics:
     loopback0_range: 10.22.0.0/22
     loopback1_range: 10.23.0.0/22
     subnet_range: 10.24.0.0/22
+
+# Target fabrics (used by 15_create_networks.yml) - derived from fabrics list
+ndfc_target_fabrics: "{{ fabrics | map(attribute='name') | map('regex_replace', '^(.*)$', '{\"fabric\": \"\\1\"}') | map('from_json') | list }}"
+
+# NDFC controller endpoint (used by 15_create_networks.yml)
+ndfc_host: "10.199.101.100"
+
+# Overlay networks to provision (used by 15_create_networks.yml)
+# Each item is sent to POST /fabrics/{fabric}/networks
+ndfc_networks:
+  - name: "PROD_VXLAN_100"
+    vrf: "TenantProd"
+    network_id: 100
+    gateway: "192.168.100.1/24"
+  - name: "PROD_VXLAN_200"
+    vrf: "TenantProd"
+    network_id: 200
+    gateway: "192.168.200.1/24"
+  - name: "DEV_VXLAN_300"
+    vrf: "TenantDev"
+    network_id: 300
+    gateway: "192.168.300.1/24"
+  - name: "MGMT_VXLAN_400"
+    vrf: "Global"
+    network_id: 400
+    gateway: "10.199.200.1/24"

@@ -1,0 +1,14 @@
+---
+# Ansible-lint config used by CI to validate playbooks and roles.
+# See https://ansible.readthedocs.io/projects/lint/configuring/
+exclude_paths:
+  - .cache/
+  - .github/
+  - terraform/
+
+skip_list:
+  - role-name  # no roles in this repo yet
+  - schema[meta]  # no role meta/main.yml
+  - fqcn[action-core]  # mix of cisco.dcnm and ansible.builtin acceptable here
+
+use_default_rules: true

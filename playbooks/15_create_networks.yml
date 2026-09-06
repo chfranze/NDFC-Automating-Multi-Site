@@ -1,0 +1,70 @@
+---
+# Create overlay networks across one or more NDFC fabrics.
+# Network definitions are read from group_vars/ndfc.yml (ndfc_networks) and
+# applied to the fabrics listed in ndfc_target_fabrics.
+- name: Create NDFC overlay networks from inventory data
+  hosts: localhost
+  gather_facts: no
+
+  vars:
+    ndfc_host: "{{ ndfc_host | default('10.199.101.100') }}"
+    ndfc_username: "{{ ndfc_username }}"
+    ndfc_password: "{{ ndfc_password }}"
+    ndfc_target_fabrics: "{{ ndfc_target_fabrics | default(['Site1', 'Site2']) }}"
+    ndfc_networks: "{{ ndfc_networks | default([]) }}"
+
+  vars_files:
+    - ../group_vars/ndfc.yml
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - ndfc_username is defined
+          - ndfc_password is defined
+          - ndfc_host is defined
+          - ndfc_networks | length > 0
+        fail_msg: >-
+          Missing one of: ndfc_username, ndfc_password, ndfc_host, ndfc_networks.
+
+  tasks:
+    - name: Create overlay network on each target fabric
+      cisco.dcnm.dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ item.0.fabric }}/networks"
+        json_data: "{{ item.1 | to_json }}"
+      vars:
+        ansible_connection: httpapi
+        ansible_network_os: cisco.dcnm.dcnm
+        ansible_httpapi_use_ssl: true
+        ansible_httpapi_validate_certs: false
+        ansible_user: "{{ ndfc_username }}"
+        ansible_password: "{{ ndfc_password }}"
+        ansible_host: "{{ ndfc_host }}"
+      loop: "{{ ndfc_target_fabrics | product(ndfc_networks) | list }}"
+      loop_control:
+        label: "{{ item.0.fabric }}/{{ item.1.name }}"
+      register: network_create_results
+      failed_when: false
+
+    - name: Wait for networks to settle
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: Show create results
+      ansible.builtin.debug:
+        var: network_create_results.results | map(attribute='json') | list
+
+    - name: Fail if any network failed to create
+      ansible.builtin.fail:
+        msg: "One or more networks failed: {{ failures | join(', ') }}"
+      vars:
+        failures: >-
+          {{ network_create_results.results
+             | selectattr('json.NETWORK_NAME', 'defined')
+             | map(attribute='json')
+             | selectattr('RETURN_CODE', 'defined')
+             | selectattr('RETURN_CODE', 'ne', '200')
+             | map(attribute='NETWORK_NAME')
+             | list }}
+      when: failures | length > 0
