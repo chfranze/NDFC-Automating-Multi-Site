@@ -69,4 +69,15 @@ ansible-playbook playbooks/create_vxlan_fabrics.yml -v
 - Verify NDFC connectivity: `ping 10.199.101.100`
 - Check credentials are correct
 - Ensure cisco.dcnm collection is installed
-- Review NDFC logs if fabric creation fails# NDFC-Automating-Multi-Site
+- Review NDFC logs if fabric creation fails
+
+---
+
+## Professional IaC Updates
+
+- `playbooks/15_create_networks.yml` — declarative network provisioning via `cisco.dcnm`
+- `group_vars/ndfc.yml` — network definitions (`PROD_VXLAN_100`, `DEV_VXLAN_300`, etc.)
+- `.github/workflows/ci-cd.yml` — lint, plan (workflow_dispatch), apply (main push)
+- GitHub Environments (`ndfc-plan`, `ndfc-production`) for approval gates
+
+See PR for full details.
